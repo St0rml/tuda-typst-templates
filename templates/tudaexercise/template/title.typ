@@ -1,7 +1,7 @@
 #import "common/format.typ": format-date
-#import "locales.typ": *
+#import "common/lang.typ": lang, get-locale
 
-#let resolve-info-layout(exercise-type, info, info-layout, dict) = {
+#let resolve-info-layout(exercise-type, info, info-layout) = {
   let default_keys_exercise = ("term", "date", "sheet")
   let default_keys_submission= ("group", "tutor", "lecturer")
   let default_keys = if exercise-type == "exercise" {
@@ -16,9 +16,9 @@
         if info-key in default_keys {
           if info-key == filter-key {
             if info-key == "date" {
-              info-value = format-date(info-value, dict.locale) 
+              info-value = format-date(info-value, get-locale()) 
             }
-            target-list.push([#dict.at(info-key) #info-value])
+            target-list.push([#lang(info-key) #info-value])
           }
         }
         else if info-key not in default_keys_submission{
@@ -65,7 +65,6 @@
   info,
   info-layout,
   exercise-type,
-  dict
 ) = {
   let text_on_accent_color = if colorback {
     on_accent_color
@@ -149,7 +148,7 @@
       if info-layout != none {
         block(
           inset: text_inset,
-          resolve-info-layout(exercise-type, info, info-layout, dict)
+          resolve-info-layout(exercise-type, info, info-layout)
         )
         line(length: 100%, stroke: stroke)
       }
