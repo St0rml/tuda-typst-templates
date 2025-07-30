@@ -6,7 +6,6 @@
 #import "common/format.typ": text-roboto
 #import "common/lang.typ": lang, check-locale
 #import "title.typ": *
-#import "title-sub.typ" as title-sub
 
 #let design-defaults = (
   accentcolor: "0b",
@@ -98,9 +97,6 @@
     left: ("term", "date", "sheet", "group"),
     right: ("tutor", "lecturer")
   ),
-
-
-  title-sub: title-sub.exercise(),
 
   design: design-defaults,
 
@@ -296,7 +292,6 @@
         info,
         info-layout,
         exercise-type,
-        dict
         )
     }
 
