@@ -4,6 +4,7 @@
 #import "common/util.typ": check-font-exists
 #import "common/colorutil.typ": calc-relative-luminance, calc-contrast
 #import "common/format.typ": text-roboto
+#import "common/lang.typ": lang, check-locale
 #import "title.typ": *
 #import "title-sub.typ" as title-sub
 
@@ -68,6 +69,7 @@
 /// 
 /// - body (content): 
 #let tudaexercise(
+  language: "en",
   exercise-type: "exercise",
 
   language: "eng",
@@ -205,6 +207,9 @@
     spacing: 1.1em
   )
   
+  // Check if language is supported or even valid
+  check-locale(language)
+
   set text(
     font: "XCharter",
     size: 10.909pt,
@@ -212,16 +217,9 @@
     kerning: true,
     ligatures: false,
     spacing: 91%, // to make it look like the latex template,
-    fill: text_color
+    fill: text_color,
+    lang: language
   )
-
-  let dict = if language == "eng" {
-    dict_en
-  } else if language == "ger" {
-    dict_de
-  } else {
-    panic("Unsupported language")
-  }
 
   set heading(numbering: (..numbers) => {
     if "sheet" in info {
@@ -241,7 +239,7 @@
       let final-prefix = if (task-prefix != none) {
         task-prefix
       } else {
-        dict.task + " "
+        lang("task") + " "
       }
       tuda-section[#final-prefix#c: #it.body]
     } else if it.level == 2 {
@@ -297,6 +295,7 @@
         logo, 
         tud_title_logo_height, 
         info,
+        title-sub,
         info-layout,
         exercise-type,
         dict
