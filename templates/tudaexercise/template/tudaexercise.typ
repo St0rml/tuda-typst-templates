@@ -70,9 +70,12 @@
 /// - body (content): 
 #let tudaexercise(
   language: "en",
+<<<<<<< HEAD
   exercise-type: "exercise",
 
   language: "eng",
+=======
+>>>>>>> a32c3dc7308af784faf8b805f95b1e9cd187813f
 
   margins: tud_exercise_page_margin,
 
@@ -296,9 +299,12 @@
         tud_title_logo_height, 
         info,
         title-sub,
+<<<<<<< HEAD
         info-layout,
         exercise-type,
         dict
+=======
+>>>>>>> a32c3dc7308af784faf8b805f95b1e9cd187813f
         )
     }
 
