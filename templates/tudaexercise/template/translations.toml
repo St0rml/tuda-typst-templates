@@ -10,17 +10,17 @@ sheet.de = "Übungsblatt"
 group.en = "Exercise group"
 group.de = "Übungsgruppe"
 
-tutor.en = "Tutor"
-tutor.de = "Tutor"
+tutor.en = "Tutor:"
+tutor.de = "Tutor:"
 
-lecturer.en = "Lecturer"
-lecturer.de = "Dozent"
+lecturer.en = "Lecturer:"
+lecturer.de = "Dozent:"
 
-term.en = "Term"
-term.de = "Semester"
+term.en = "Term:"
+term.de = "Semester:"
 
-date.en = "Due"
-date.de = "Abgabe"
+date.en = "Due:"
+date.de = "Abgabe:"
 
 
 
