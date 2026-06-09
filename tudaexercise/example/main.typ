@@ -23,7 +23,7 @@
   design: (
     accentcolor: "0b",
     colorback: true,
-    darkmode: false,
+    darkmode: "darkmode" in sys.inputs,
   ),
   task-prefix: none,
 )
