@@ -1,4 +1,4 @@
-#import "@preview/athena-tu-darmstadt-exercise:0.2.0": (
+#import "@preview/athena-tu-darmstadt-exercise:0.3.0": (
   difficulty-format, info-layout, point-format, subtask, task, task-points-header, text-roboto, tuda-difficulty-stars,
   tuda-gray-info, tuda-section, tuda-subsection, tudaexercise,
 )
@@ -25,7 +25,8 @@
     colorback: true,
     darkmode: "darkmode" in sys.inputs,
   ),
-  task-prefix: none,
+  task-prefix: auto,
+  task-prefix-subtasks: false,
 )
 
 #set enum(spacing: 1em, numbering: "1.", indent: 5pt)
@@ -36,7 +37,7 @@
 The easiest way is by using `typst init` like on this templates universe page. But here is everything broken down:
 
 == Add to typst
-+ Import the package: `#import "@preview/athena-tu-darmstadt-exercise:0.1.0": *`
++ Import the package: `#import "@preview/athena-tu-darmstadt-exercise:0.3.0": *`
 
 + Apply the template using `#show: tudaexercise.with(<options>)`
 
@@ -49,6 +50,8 @@ The template requires the following fonts: Roboto and XCharter. Typst right now 
 
 == Logo
 Similarly as the logo is protected and Typst does not have a folder for global resources you will need to setup the logo manually. You will need to download the logo and convert it into a svg. Then pass the `logo: image(<path to logo>)` option to this package. The height of the logo will automatically be set to 22mm.
+
+Additionally, a partner or institution logo can be passed using the `sublogo` parameter.
 
 = Configuring the title
 All options of the title can be controlled using the `info` dictionary:
@@ -123,7 +126,7 @@ Similarly subtasks are created using
 == Title of your subtask
 ```
 
-If you dislike the default task prefix, you can also set your own by changing the `taks-prefix` field of the template.
+If you dislike the default task format, you can slightly customize it using the `task-prefix`, `task-separator` and `task-prefix-subtasks` fields of the template.
 
 = Tasks with points and difficulty #task-points-header(points: 5, difficulty: 2.65)
 == Task point header #task-points-header(points: 2)
@@ -187,3 +190,8 @@ If you want to create an unnumbered section you can use the `tuda-section` or `t
 + Points -- This would require a state and make declaring tasks far more complex than just using headings. Though technically the points can also be written manually into the task title.
 
 + Solutions -- Enabling whether solutions should be shown or not from within the template would again require a state and is thus rather costly. However you can implement them rather easily as from outside the template a boolean will already do.
+
+= Migrations from v0.2.0 to v0.3.0
+
+- The `title-sub` parameter was renamed to `info-layout`. Further, it now generates no subline, if set to `none`, or no relevant info keys are passed.
+- A `task-prefix` of `none` now removes the task prefix. Instead, `auto` should be passed, to have the default task prefix.

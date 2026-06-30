@@ -3,7 +3,7 @@
   tud_exercise_page_margin, tud_header_line_height, tud_heading_line_thin_stroke, tud_inner_page_margin_top,
   tud_title_logo_height,
 )
-#import "common/headings.typ": tuda-section, tuda-subsection, tuda-subsection-unruled
+#import "common/headings.typ": tuda-nthsection, tuda-section, tuda-subsection
 #import "common/util.typ": check-font-exists
 #import "common/addons/difficulty-points.typ": difficulty-stars
 #import "common/colorutil.typ": calc-contrast, calc-relative-luminance
@@ -11,6 +11,7 @@
 #import "title.typ": *
 #import "locales.typ": *
 #import "info-layout.typ" as info-layout
+#import "task-format.typ": format-task
 #import "headline.typ": resolve-headline
 
 #let design-defaults = (
@@ -45,6 +46,8 @@
 ///
 /// - logo (content): The tuda logo as an image to be used in the title.
 ///
+/// - sublogo (content): A logo of an institution or similar for the title.
+///
 /// - info (dictionary): Info about the document mostly used in the title.
 ///
 ///   By default accepts the following items:
@@ -72,8 +75,30 @@
 /// - design (dictionary): Options for the design of the template. Possible entries:
 ///   `accentcolor`, `colorback` and `darkmode`
 ///
-/// - task-prefix (str,none): How the task numbers are prefixed. If unset, the tasks use the
-///   language default.
+/// - task-prefix (auto, str, array, content): How the task numbers are prefixed. If unset or auto,
+///   the tasks use the language default.
+///
+///   If an array is given, it is indexed at the current value of
+///   `counter("tuda-task-prefix")` mod `task-prefix.len()`.
+///   Thus, splits into group-/homework tasks can be implemented as follows:
+///
+///   ```typst
+///   #show: tudaexercise.with(
+///     ...
+///     task-prefix: ("G", "H")
+///   )
+///   = Group tasks
+///
+///   #counter("tuda-task-prefix").step()
+///   #counter(heading).update(0) // to make headings count at 1 again
+///
+///   = Homework tasks
+///   ```
+///
+/// - task-separator (str, array, content): The separator between the task numbering and the task name.
+///   If an array, it is indexed using the current heading level, repeating the last element.
+///
+/// - task-prefix-subtasks (bool): Whether subtasks should also be prefixed or not.
 ///
 /// - show-title (bool): Whether to show a title or not
 ///
@@ -90,6 +115,7 @@
   paper: "a4",
 
   logo: none,
+  sublogo: none,
 
   info: (
     title: none,
@@ -108,7 +134,9 @@
 
   design: design-defaults,
 
-  task-prefix: none,
+  task-prefix: auto,
+  task-separator: (":", ")"),
+  task-prefix-subtasks: false,
 
   show-title: true,
 
@@ -116,9 +144,7 @@
 
   body,
 ) = {
-  if paper != "a4" {
-    panic("currently just a4 paper is supported")
-  }
+  assert.eq(paper, "a4", message: "Currently just A4 paper is supported.")
 
   let margins = tud_exercise_page_margin + margins
   let design = design-defaults + design
@@ -164,6 +190,8 @@
   ))
 
   set line(stroke: text_color)
+  set block(stroke: 0pt + text_color)
+  set curve(stroke: 0pt + text_color)
 
   let ruled_subtask = if subtask == "ruled" {
     true
@@ -221,13 +249,19 @@
     lang: language,
   )
 
+  show raw: set text(spacing: 100%)
+
   let dict = get-locale-dict(language)
 
   set heading(numbering: (..numbers) => {
+    let len = numbers.pos().len()
+    assert(len < 4, message: "Headings beyond level 3 need to supply their own numbering.")
+
+    let base = "1a i"
     if "sheet" in info {
-      numbering("1.1a", info.sheet, ..numbers)
+      numbering("1." + base, info.sheet, ..numbers)
     } else {
-      numbering("1a", ..numbers)
+      numbering(base, ..numbers)
     }
   })
 
@@ -237,21 +271,13 @@
       return
     }
     let c = counter(heading).display(it.numbering)
+    let prefix = format-task(task-prefix, c, task-separator, task-prefix-subtasks, it, dict)
     if it.level == 1 {
-      let final-prefix = if (task-prefix != none) {
-        task-prefix
-      } else {
-        dict.task + " "
-      }
-      tuda-section[#final-prefix#c: #it.body]
+      tuda-section[#prefix #it.body]
     } else if it.level == 2 {
-      if ruled_subtask {
-        tuda-subsection(c + ") " + it.body)
-      } else {
-        tuda-subsection-unruled(c + ") " + it.body)
-      }
+      tuda-subsection(ruled: ruled_subtask)[#prefix #it.body]
     } else {
-      it
+      tuda-nthsection(ruled: ruled_subtask)[#prefix #it.body]
     }
   }
 
@@ -320,6 +346,7 @@
         text_color,
         design.colorback,
         logo,
+        sublogo,
         tud_title_logo_height,
         info,
         info-layout,
@@ -334,9 +361,11 @@
   }
 }
 
-#let tuda-gray-info(title: none, body) = context {
-  let darkmode = s.get().darkmode
-  let background = if (darkmode == false) { rgb("#f0f0f0") } else { rgb("#3F4647") }
+#let tuda-box(title: none, color: none, fill: true, body) = {
+  assert.ne(color, none, message: "Please define a color for the box.")
+  let background = if fill {
+    color.transparentize(80%)
+  }
   rect(
     fill: background,
     // inset: 1em,
@@ -346,13 +375,15 @@
     ),
     radius: 3pt,
     width: 100%,
-    stroke: (left: 5pt + gray),
+    stroke: (left: 5pt + color),
     [
       #{ if title != none [#text-roboto(strong(title)) \ ] }
       #body
     ],
   )
 }
+
+#let tuda-gray-info = tuda-box.with(color: gray, fill: true)
 
 /// Formats points for display in a task header.
 ///

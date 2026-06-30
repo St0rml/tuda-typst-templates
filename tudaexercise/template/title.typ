@@ -18,6 +18,7 @@
   text_color,
   colorback,
   logo_element,
+  sublogo_element,
   logo_height,
   info,
   info-layout,
@@ -47,7 +48,7 @@
 
   set text(fill: text_on_accent_color)
 
-  box(
+  block(
     fill: if colorback { accent_color },
     width: 100%,
     outset: 0pt,
@@ -57,33 +58,36 @@
       v(logo_height / 2)
       grid(
         columns: (1fr, auto),
-        box(inset: (y: 3mm), {
+        align: (auto, right),
+        pad(y: 3mm, {
           set text(font: "Roboto", weight: "bold", size: 12pt)
           grid(
             row-gutter: 1em,
             inset: text_inset,
-            if "title" in info {
-              text(info.title, size: 20pt)
-            },
-            if "subtitle" in info {
-              info.subtitle
-            },
-            if "author" in info {
-              if type(info.author) == array {
-                for author in info.author {
-                  if type(author) == array {
-                    [#author.at(0)
-                      #text(weight: "regular", size: 0.8em)[(Mat.: #author.at(1))]]
-                    linebreak()
-                  } else {
-                    author
-                    linebreak()
+            ..(
+              if "title" in info {
+                text(info.title, size: 20pt)
+              },
+              if "subtitle" in info {
+                info.subtitle
+              },
+              if "author" in info {
+                if type(info.author) == array {
+                  for author in info.author {
+                    if type(author) == array {
+                      [#author.at(0)
+                        #text(weight: "regular", size: 0.8em)[(Mat.: #author.at(1))]]
+                      linebreak()
+                    } else {
+                      author
+                      linebreak()
+                    }
                   }
+                } else {
+                  info.author
                 }
-              } else {
-                info.author
-              }
-            },
+              },
+            ).filter(x => x != none)
           )
 
           v(.5em)
@@ -97,6 +101,11 @@
                 logo_element
               },
             )
+          }
+          if sublogo_element != none {
+            // 2/3 is from the tudapub example
+            set image(height: logo_height * 2 / 3)
+            sublogo_element
           }
         },
       )
