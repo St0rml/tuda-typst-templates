@@ -11,39 +11,24 @@ import sys
 
 # gitignore style pattern relative to repo root
 publish_ignore_files = """
-/example_tudapub.pdf
-/example_tudapub.typ
-/.typos.toml
-
-/.git/
-/scripts/
-
 /tests/
-/tud_design_guide/
-**/TODO.md
 
-/templates_examples/*/logos/*
-!/templates_examples/*/logos/*.sh
-!/templates_examples/*/logos/*logo_replace.svg
-/templates_examples/*/fonts/*
-!/templates_examples/*/fonts/*.sh
-/templates_examples/*/template
-/templates_examples/*/*.pdf
+/example/logos/*
+!/example/logos/*.sh
+!/example/logos/*logo_replace.svg
 
-/common/
-/assets/
+/example/fonts/*
+!/example/fonts/*.sh
 
 .DS_Store
-.venv
-.vscode
-
+*.pdf
 """
 
 # template folder names
 templates = [
     'tudapub',
     'tudaexercise',
-    'not-tudabeamer-2023'
+    'tudabeamer'
 ]
 
 
@@ -53,7 +38,7 @@ repo_root = script_folder + '/..'
 os.chdir(repo_root)
 
 ignore_pattern = pathspec.PathSpec.from_lines(
-    pathspec.patterns.GitWildMatchPattern, 
+    pathspec.patterns.GitWildMatchPattern,
     publish_ignore_files.splitlines()
 )
 
@@ -64,19 +49,35 @@ parser = argparse.ArgumentParser(
     prog='Typst Package Publisher',
     description='Copies this repo to typst local packages or locally cloned typst-packages while not copying the ignored files.'
 )
-parser.add_argument('--local', action='store_true', 
+parser.add_argument('--local', action='store_true',
                     help='copy to $TYPST_PACKAGE_ROOT/typst/packages/local/<PACKAGE_NAME>/<VERSION>.99')
-parser.add_argument('--clean-dist-folder-force', action='store_true', 
+parser.add_argument('--clean-dist-folder-force', action='store_true',
                     help='Delete the contents of the destinatio folder before copying without asking. ')
-parser.add_argument('--universe', type=str, 
+parser.add_argument('--universe', type=str,
                     help='copy to GIVEN_TYPST_PACKAGES_LOCAL_REPO_PATH//<PACKAGE_NAME>/<VERSION>',
                     metavar='GIVEN_TYPST_PACKAGES_LOCAL_REPO_PATH')
-parser.add_argument('--not-clean-dist-folder', action='store_true', 
+parser.add_argument('--not-clean-dist-folder', action='store_true',
                     help='Not delete the contents of the destinatio folder before copying.')
-parser.add_argument('--template', type=str, 
+parser.add_argument('--template', type=str,
                     help='If set only publish the template with this name, otherwise all templates.')
+parser.add_argument('--tag', type=str,
+                    help='The tag to use when rewriting links.')
 args = parser.parse_args()
 
+## input validation
+
+# check whether tag is valid
+if args.tag is not None:
+    import subprocess
+
+    result = subprocess.run([
+        "git", "tag", "--list"
+    ], stdout=subprocess.PIPE, text=True)
+    tags = result.stdout.splitlines()
+    if not args.tag in tags:
+        print(f'Invalid tag: {args.tag}')
+        parser.print_usage()
+        exit(1)
 
 # get copy destination
 copy_dest_dir = None
@@ -101,7 +102,7 @@ elif args.universe is not None:
 
 def copy_by_ignore_pattern(root, pattern: str, copy_dest_dir):
     ignore_pattern = pathspec.PathSpec.from_lines(
-        pathspec.patterns.GitWildMatchPattern, 
+        pathspec.patterns.GitWildMatchPattern,
         pattern.splitlines()
     )
     # filter files and also resolve symlinks
@@ -109,12 +110,12 @@ def copy_by_ignore_pattern(root, pattern: str, copy_dest_dir):
         dest = copy_dest_dir / match
         print(f'  - copy {match} to {dest}')
         os.makedirs(pathlib.Path(dest).parent, exist_ok=True)
-        shutil.copy(match, dest)
+        shutil.copy(root / match, dest)
 
 
 def delete_by_ignore_pattern(root, pattern: str):
     ignore_pattern = pathspec.PathSpec.from_lines(
-        pathspec.patterns.GitWildMatchPattern, 
+        pathspec.patterns.GitWildMatchPattern,
         pattern.splitlines()
     )
     # filter files and also resolve symlinks
@@ -125,7 +126,7 @@ def delete_by_ignore_pattern(root, pattern: str):
 
 
 def copy_template(copy_dest_dir, template_folder_name = 'tudapub'):
-    template_folder = pathlib.Path('templates') / template_folder_name
+    template_folder = pathlib.Path(repo_root) / template_folder_name
 
     # read typt.toml
     typst_toml = toml.load(template_folder / 'typst.toml')
@@ -148,47 +149,29 @@ def copy_template(copy_dest_dir, template_folder_name = 'tudapub'):
     os.makedirs(copy_dest_dir, exist_ok=True)
 
     # filter files and also resolve symlinks
-    copy_by_ignore_pattern(repo_root, publish_ignore_files, copy_dest_dir)
-    delete_by_ignore_pattern(copy_dest_dir, f"""
-    /templates_examples/*/logos/*
-    !/templates_examples/*/logos/*.sh
-    /templates_examples/*/fonts/*
-    !/templates_examples/*/fonts/*.sh
-    """)
+    copy_by_ignore_pattern(template_folder, publish_ignore_files, copy_dest_dir)
 
-    
-    # now move template sub-folder to root dir and remove other templates
-    dest_template_folder = copy_dest_dir / 'templates' / template_folder_name
-    for src_file in os.listdir(dest_template_folder):
-        src_path = os.path.join(dest_template_folder, src_file)
-        print(f" - move {src_path} to ./")
-        shutil.move(src_path, copy_dest_dir)
-    # remove template folder
-    shutil.rmtree(copy_dest_dir / 'templates')
-    
-    # copy example
-    examples_folder = copy_dest_dir / 'templates_examples'
-    shutil.copytree(examples_folder / template_folder_name, copy_dest_dir / 'example')
-    shutil.rmtree(examples_folder)
-
+    shutil.copy("README.md", copy_dest_dir / "README.md")
 
     # replace markdown links in readme -> add full repo path in front
     links_to_replace_with_repo_path = [
-        'templates/tudapub/template/tudapub.typ',
+        'tudaexercise/template/tudaexercise.typ',
+        'tudapub/template/tudapub.typ',
+        'tudabeamer/template/lib.typ',
+        'tudaexercise/example/main.typ',
         'example_tudapub.pdf',
         'example_tudapub.typ',
-        'templates/tudapub/tudapub.typ',
-        'templates/tudapub/TODO.md',
-        'templates/tudaexercise/template/tudaexercise.typ',
-        'templates_examples/tudaexercise/main.typ'
+        'tudabeamer/example/main.typ',
+        './CONTRIBUTING.md'
     ]
-    repo_path = package_repository + '/blob/main/'
+    ref = args.tag or 'main'
+    repo_path = f'{package_repository}/blob/{ref}/'
     print('\n>> will replace links in the REAMDME.md')
     link_regex = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
     with open(copy_dest_dir / "README.md", "r+") as readme:
         c = readme.read()
         links = list(link_regex.finditer(c)) #findall(c))
-        
+
         def replace(match):
             out_full = match.group()
             out_split = out_full.split('(')
@@ -203,7 +186,7 @@ def copy_template(copy_dest_dir, template_folder_name = 'tudapub'):
 
         # replace image links in readme
         img_tag_start = '<img src="'
-        repo_path_raw = package_repository.replace('https://github.com/', 'https://raw.githubusercontent.com/') + '/refs/heads/main/'
+        repo_path_raw = package_repository.replace('https://github.com/', 'https://raw.githubusercontent.com/') + f'/refs/{'heads' if args.tag is None else 'tags'}/{ref}/'
         c = c.replace(img_tag_start, img_tag_start + repo_path_raw)
 
         # overwrite
@@ -221,4 +204,5 @@ if args.template:
     ]
 
 for name in templates:
+    print(">> copying " + name)
     copy_template(copy_dest_dir=copy_dest_dir, template_folder_name=name)

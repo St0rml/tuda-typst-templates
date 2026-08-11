@@ -7,7 +7,7 @@
 // Set these up before
 #let tudpub-make-title-page(
   title: [Title],
-  title_german: [Title German],
+  subtitle: [Subtitle],
 
   // "master" or "bachelor" thesis
   thesis_type: "master",
@@ -18,7 +18,6 @@
 
   // language for correct hyphenation
   language: "en",
-
 
   // author name as text, e.g "Albert Author"
   author: "A Author",
@@ -54,26 +53,39 @@
   // E.g. logo_sub_content_text: [ Institute A \ filed of study: \ B]
   logo_sub_content_text: none,
 
-  title_height: 3.5em
+  // Minimum title height is always 3.5em.
+  // If set to auto, title height is inferred from content.
+  title_height: auto,
 ) = {
-
   // vars
   let accentcolor_rgb = tuda_colors.at(accentcolor)
   let title_separator_spacing = 15pt
   let title = [#title]
-  //let title_height = 150pt //measure(title, styles).height
   let title_page_inner_margin_left = 8pt
   let logo_tud_height = 22mm
+
+  let make-title-box-content(content_width: 100%) = {
+    [
+      #set text(
+        font: "Roboto",
+        weight: "bold",
+        size: 35.86pt,
+      )
+      #set par(
+        justify: false,
+        leading: 20pt,
+      )
+      #box(width: content_width)[#title]
+    ]
+  }
 
   let submission_date = format-date(date_of_submission, language)
 
   let thesis_type_text = {
-    if lower(thesis_type) == "master" {lang("master_thesis")}
-    else if lower(thesis_type) == "bachelor" {lang("bachelor_thesis")}
-    else if lower(thesis_type) == "report" {lang("report")}
-    else {panic("thesis_type has to be either 'master', 'bachelor' or 'report' ")}
+    if lower(thesis_type) == "master" {lang("master_thesis")} else if lower(thesis_type) == "bachelor" {lang("bachelor_thesis")} else {
+      panic("thesis_type has to be either 'master' or 'bachelor'")
+    }
   }
-
 
   ///////////////////////////////////////
   // Display the title page
@@ -86,7 +98,7 @@
       //fallback: false,
       weight: "bold",
       size: 35.86pt,
-      //height: 
+      //height:
     )
 
     //#v(80pt)
@@ -94,15 +106,28 @@
       rows: (auto, 1fr),
       stack(
         // title
-        block(
-          inset: (left: title_page_inner_margin_left),
-          height: title_height)[
-            #set par(
-              justify: false,
-              leading: 20pt   // line spacing
+        layout(size => {
+          // measure title dimensions for automatic height adjustment
+          let title_content_width = size.width - title_page_inner_margin_left
+          let title_height_min = measure(box(height: 3.5em)[]).height
+          let title_height_calculated = if title_height == auto {
+            calc.max(
+              title_height_min,
+              measure(
+                make-title-box-content(content_width: title_content_width),
+              ).height,
             )
-            #align(bottom)[#title]
-          ],
+          } else {
+            title_height
+          }
+
+          block(
+            inset: (left: title_page_inner_margin_left),
+            height: title_height_calculated,
+          )[
+            #align(bottom)[#make-title-box-content(content_width: title_content_width)]
+          ]
+        }),
         v(title_separator_spacing),
         line(length: 100%, stroke: tud_heading_line_thin_stroke),
         v(3mm), // title_separator_spacing
@@ -111,9 +136,9 @@
         block(inset: (left: title_page_inner_margin_left))[
           #set text(size: 12pt)
           #set par(
-            leading: 5.8pt
+            leading: 5.8pt,
           )
-          #title_german
+          #subtitle
           \
           #set text(weight: "regular")
           #thesis_type_text #lang("by") #author
@@ -129,30 +154,30 @@
           #v(-8pt) // spacing optional
           #location
         ],
-        v(15pt)
+        v(15pt),
       ),
       // color rect with logos
       rect(
         fill: color.rgb(accentcolor_rgb),
         stroke: (
           top: tud_heading_line_thin_stroke,
-          bottom: tud_heading_line_thin_stroke
+          bottom: tud_heading_line_thin_stroke,
         ),
         inset: 0mm,
         width: 100%,
-        height: 100%//10em
+        height: 100%, //10em
       )[
-        
-        #v(logo_tud_height/2)
+
+        #v(logo_tud_height / 2)
         #context {
           //let tud_logo = image(logo_tuda_path, height: logo_tud_height)
           let tud_logo = [
-                #set image(height: logo_tud_height)
-                #if logo_tuda == none {
-                  box(fill: white)[logo_tuda \ not set!]
-                } else {
-                  logo_tuda
-                } 
+            #set image(height: logo_tud_height)
+            #if logo_tuda == none {
+              box(height: logo_tud_height, fill: white)[logo_tuda \ not set!]
+            } else {
+              logo_tuda
+            }
           ]
           let tud_logo_width = measure(tud_logo).width
           let tud_logo_offset_right = -6.3mm
@@ -160,7 +185,7 @@
 
           align(right)[
             //#natural-image(logo_tuda_path)
-            #grid( 
+            #grid(
               // tud logo
               // move logo(s) to the right
               box(inset: (right: tud_logo_offset_right), fill: black)[
@@ -168,49 +193,54 @@
                 #tud_logo
               ],
               // sub logo
-              v(5mm),
+              if logo_institute != none { v(5mm) },
               // height from design guidelines
+              let logo_institute_extend_dx = -tud_logo_offset_right * (2 / 3),
               if logo_institute != none {
-                box(inset: (right: logo_institute_offset_right), fill: black)[
-                  #set image(height: tud_logo_width*(2/3))
+                move(dx: logo_institute_extend_dx, box(
+                  inset: (right: logo_institute_offset_right + logo_institute_extend_dx),
+                  fill: white,
+                )[
                   #{
                     if logo_institute_sizeing_type == "width" {
                       //image(logo_institute_path, width: tud_logo_width*(2/3))
-                      set image(width: tud_logo_width*(2/3), height: auto)
+                      set image(width: tud_logo_width * (2 / 3), height: auto)
                       logo_institute
-                    }
-                    else if logo_institute_sizeing_type == "height" {
+                    } else if logo_institute_sizeing_type == "height" {
                       //image(logo_institute_path, height: logo_tud_height*(2/3))
-                      set image(height: logo_tud_height*(2/3))
+                      set image(height: logo_tud_height * (2 / 3), width: auto)
                       logo_institute
-                    }
-                    else {
+                    } else {
                       panic("logo_institute_sizeing_type has to be width or height")
                     }
                   }
-                ]
-              },
-              // sub box with custom text
-              if logo_sub_content_text != none {
-                box(width: tud_logo_width, 
-                    outset: 0mm, 
-                    fill: white, 
-                    inset: (
-                      top: 6pt,
-                      bottom: 6pt,
-                      left: 4.5mm,
-                      right: 6pt
-                    ),
-                    align(left)[
-                    #set text(weight: "regular", size: 9.96pt)
-                  #logo_sub_content_text
                 ])
-            }
+              },
+              if logo_sub_content_text != none { v(5mm) },
+              // sub box with custom text
+              let logo_sub_box_extend_dx = -tud_logo_offset_right,
+              if logo_sub_content_text != none {
+                move(dx: logo_sub_box_extend_dx, box(
+                  width: tud_logo_width + logo_sub_box_extend_dx,
+                  outset: 0mm,
+                  fill: white,
+                  inset: (
+                    top: 6pt,
+                    bottom: 6pt,
+                    left: 4.5mm,
+                    right: logo_sub_box_extend_dx,
+                  ),
+                  align(left)[
+                    #set text(weight: "regular", size: 9.96pt)
+                    #logo_sub_content_text
+                  ],
+                ))
+              },
             )
           ]
         }
-        
-      ]
+
+      ],
     )
   ]
 }

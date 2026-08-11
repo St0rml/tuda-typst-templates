@@ -1,4 +1,4 @@
-#import "props.typ": tud_heading_line_thin_stroke, tud_header_line_height
+#import "props.typ": tud_header_line_height, tud_heading_line_thin_stroke
 
 #let tud_body_line_height = tud_header_line_height / 2
 
@@ -10,17 +10,20 @@
   text-prefix: "",
   text-suffix: "",
   counter-suffix: "",
-  it
+  it,
 ) = {
   set text(
-      font: "Roboto",
-      fallback: false,
-      weight: text-weight,
-      size: text-size
-    )
+    font: "Roboto",
+    fallback: false,
+    weight: text-weight,
+    size: text-size,
+  )
   //set block(below: 0.5em, above: 2em)
   block(
-    breakable: false, inset: 0pt, outset: 0pt, fill: none,
+    breakable: false,
+    inset: 0pt,
+    outset: 0pt,
+    fill: none,
     //above: heading_margin_before,
     //below: 0.6em //+ 10pt
   )[
@@ -37,11 +40,10 @@
         }
         it.body
         text-suffix
-      
       }),
       v(heading_line_spacing),
       line(length: 100%, stroke: tud_heading_line_thin_stroke),
-      v(10pt)
+      v(10pt),
     )
   ]
 }
@@ -49,20 +51,14 @@
 #let tuda-section-lines(above: 1.8em, below: 1.2em, ruled: true, body) = {
   block(
     width: 100%,
-    inset: 0mm,
+    inset: (y: 0.2em),
     outset: 0mm,
     above: above,
     below: below,
-    {
-      set block(spacing: 0.2em)
-      if ruled {
-        line(length: 100%, stroke: tud_body_line_height)
-      }
-      body
-      if ruled {
-        line(length: 100%, stroke: tud_body_line_height)
-      }
-    }
+    stroke: if ruled {
+      (y: tud_body_line_height)
+    },
+    body,
   )
 }
 
@@ -83,10 +79,22 @@
 /// #tuda-subsection("Lorem ipsum")
 /// ```
 /// - title (str): The title of this subsection
-#let tuda-subsection(title) = {
-  tuda-section-lines(above: 1.4em, below: 1em, text(title, font: "Roboto", weight: "regular", size: 11pt))
+/// - ruled (bool): Whether to add lines around the section
+#let tuda-subsection(title, ruled: true) = {
+  tuda-section-lines(above: 1.4em, below: 1em, ruled: ruled, text(title, font: "Roboto", weight: "regular", size: 11pt))
 }
 
-#let tuda-subsection-unruled(title) = {
-  tuda-section-lines(above: 1.4em, below: 1em, ruled: false, text(title, font: "Roboto", weight: "regular", size: 11pt))
-}
+#let tuda-subsection-unruled = tuda-subsection.with(ruled: false)
+
+/// Creates a subsection similar to level 3 headers and beyond.
+/// But does not add other text or a counter.
+/// ```
+/// #tuda-nthsection("Lorem ipsum")
+/// ```
+/// - title (str): The title of this (sub)+section
+/// - ruled (bool): Whether to add lines around the section
+#let tuda-nthsection(title, ruled: true) = tuda-section-lines(above: 1em, below: 0.7em, ruled: ruled, text(
+  title,
+  font: "Roboto",
+  weight: "regular",
+))
