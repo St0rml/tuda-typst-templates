@@ -1,0 +1,18 @@
+# tudapub
+[en]
+master_thesis = "Master thesis"
+bachelor_thesis = "Bachelor thesis"
+report = "Report"
+by = "by"
+date_of_submission = "Date of submission:"
+contents = "Contents"
+review = "Review"
+
+[de]
+master_thesis = "Master Thesis"
+bachelor_thesis = "Bachelor Thesis"
+report = "Bericht"
+by = "von"
+date_of_submission = "Abgabedatum:"
+contents = "Inhaltsverzeichnis"
+review = "Korrektur"

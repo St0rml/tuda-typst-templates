@@ -1,7 +1,8 @@
-#import "@preview/athena-tu-darmstadt-thesis:0.1.2": *
+#import "@local/athena-tu-darmstadt-thesis:0.1.2": *
 
 // setup the template
 #show: tudapub.with(
+  language: "en",
   title: [
     TUDa Thesis
     With Typst

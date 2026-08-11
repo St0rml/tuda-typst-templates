@@ -1,4 +1,4 @@
-
+#import "lang.typ": lang
 
 #let tudapub-make-outline-table-of-contents(
   // How the table of contents outline is displayed.
@@ -112,7 +112,7 @@
     heading(
       level: 1,
       outlined: false,
-    )[Contents]
+    )[#lang("contents")]
 
     context {
       let headings = query(selector(heading.where(outlined: true)).after(here()))
